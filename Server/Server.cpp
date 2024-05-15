@@ -1,5 +1,6 @@
 #include <iostream>
 #include <fstream>
+#include <stdio.h>
 
 // 파일 전송
 // 클라이언트 -> 서버
@@ -7,7 +8,7 @@
 
 enum
 {
-	SERVER_PORT = 54000, 
+	SERVER_PORT = 54000,
 
 	BUFFER_SIZE = 4096
 };
@@ -180,8 +181,13 @@ int main()
 #endif
 		if (bSuccess)
 		{
-			std::cout << "File Receive End" << std::endl;
+			std::cout << std::endl << "File Receive End" << std::endl;
 			break;
 		}
 	}
+
+	std::cout << std::endl << "Press any key to exit" << std::endl;
+	getchar();
+
+	return 0;
 }

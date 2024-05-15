@@ -230,8 +230,13 @@ int main()
 #endif
 		if (bSuccess)
 		{
-			std::cout << "File Transfer End" << std::endl;
+			std::cout << std::endl << "File Transfer End" << std::endl;
 			break;
 		}
 	}
+
+	std::cout << std::endl << "Press any key to exit" << std::endl;
+	getchar();
+
+	return 0;
 }
