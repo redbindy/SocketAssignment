@@ -14,7 +14,7 @@ enum
 
 typedef int error_code_t;
 
-#ifdef _WIN32 || _WIN64
+#if defined(_WIN32) || defined(_WIN64)
 #include <WinSock2.h>
 #pragma comment (lib, "ws2_32.lib")
 
@@ -171,7 +171,7 @@ int main()
 	{
 		bool bSuccess;
 
-#ifdef _WIN32 || _WIN64
+#if defined(_WIN32) || defined(_WIN64)
 		bSuccess = socketWindows();
 #endif
 
