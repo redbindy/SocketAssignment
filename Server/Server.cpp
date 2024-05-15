@@ -13,8 +13,6 @@ enum
 	BUFFER_SIZE = 4096
 };
 
-typedef int error_code_t;
-
 #if defined(_WIN32) || defined(_WIN64)
 #include <WinSock2.h>
 #pragma comment (lib, "ws2_32.lib")
