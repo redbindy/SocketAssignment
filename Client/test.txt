@@ -1,0 +1,11 @@
+# Bing AI Introduction
+
+Bing AI is an innovative search engine powered by artificial intelligence. It offers features such as natural language input, image creation, summarization, and prompts to creatively display search results.
+
+## Usage Restrictions
+
+Bing Chat is not available if harmful content blocking settings are set to strict. Users must adjust their settings to access the chat feature.
+
+## Jeju National University
+
+Search results related to Jeju National University are private and can only be viewed by the user. The university may have specific content that is tailored for individual users.
