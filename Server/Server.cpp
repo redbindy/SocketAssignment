@@ -8,7 +8,7 @@
 
 enum
 {
-	SERVER_PORT = 54000,
+	SERVER_PORT = 10005,
 
 	BUFFER_SIZE = 4096
 };
