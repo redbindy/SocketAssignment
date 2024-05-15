@@ -102,7 +102,7 @@ bool socketWindows()
 	char buffer[BUFFER_SIZE + 1] = { 0, };
 
 	std::ofstream fout;
-	fout.open("file.txt", std::ios_base::out);
+	fout.open("file.txt", std::ios_base::out | std::ios_base::binary);
 	{
 		std::cout << "server ready..." << std::endl;
 		while (true)
@@ -156,10 +156,124 @@ bool socketWindows()
 #endif
 
 #ifdef __linux__
+#include <sys/socket.h>
+#include <arpa/inet.h>
+#include <string.h>
+#include <unistd.h>
 
 bool socketLinux()
 {
+	std::cout << "socket..." << std::endl;
+	int listeningSock = socket(AF_INET, SOCK_STREAM, IPPROTO_TCP);
 
+	if (listeningSock < 0)
+	{
+		std::cerr << "Invalid Socket: Code - " << errno << std::endl;
+
+		return false;
+	}
+
+	sockaddr_in hint;
+	memset(&hint, 0, sizeof(hint));
+
+	hint.sin_family = AF_INET;
+	hint.sin_addr.s_addr = htonl(INADDR_ANY);
+	hint.sin_port = htons(SERVER_PORT);
+
+	std::cout << "bind..." << std::endl;
+	int result = bind(listeningSock, reinterpret_cast<sockaddr*>(&hint), sizeof(hint));
+
+	if (result < 0)
+	{
+		std::cerr << "Bind Failed: Code - " << errno << std::endl;
+
+		close(listeningSock);
+
+		return false;
+	}
+
+	std::cout << "listen..." << std::endl;
+	result = listen(listeningSock, SOMAXCONN);
+
+	if (result < 0)
+	{
+		std::cerr << "listen Failed: Code - " << errno << std::endl;
+
+		close(listeningSock);
+
+		return false;
+	}
+
+	sockaddr_in clientSocketInfo;
+	socklen_t clientSize = sizeof(clientSocketInfo);
+
+	std::cout << "accept..." << std::endl;
+	int clientSocket = accept(listeningSock, reinterpret_cast<sockaddr*>(&clientSocketInfo), &clientSize);
+
+	if (clientSocket < 0)
+	{
+		std::cerr << "accept Failed: Code - " << errno << std::endl;
+
+		close(listeningSock);
+
+		return false;
+	}
+
+	// 1:1이라 미리 닫기
+	close(listeningSock);
+
+	// 널 문자 자리 확보
+	char buffer[BUFFER_SIZE + 1] = { 0, };
+
+	std::ofstream fout;
+	fout.open("file.txt", std::ios_base::out | std::ios_base::binary);
+	{
+		std::cout << "server ready..." << std::endl;
+		while (true)
+		{
+			int bytesReceived = recv(clientSocket, buffer, BUFFER_SIZE, 0);
+
+			if (bytesReceived < 0)
+			{
+				std::cerr << "recv Failed: Code - " << errno << std::endl;
+				break;
+			}
+
+			if (bytesReceived == 0)
+			{
+				std::cout << "Client disconnected" << std::endl;
+				break;
+			}
+
+			size_t length = 0;
+			for (char c : buffer)
+			{
+				if (c == '\0')
+				{
+					break;
+				}
+
+				++length;
+			}
+
+			if (length == BUFFER_SIZE)
+			{
+				fout << buffer;
+			}
+			else
+			{
+				fout << buffer << std::endl;
+			}
+
+			std::cout << buffer << std::endl;
+			send(clientSocket, buffer, bytesReceived + 1, 0);
+		}
+	}
+	fout.close();
+
+	close(clientSocket);
+
+	return true;
 }
 
 #endif

@@ -5,6 +5,7 @@
 #include <fstream>
 #include <assert.h>
 #include <stdio.h>
+#include <climits>
 
 // 파일 전송
 // 클라이언트 -> 서버
@@ -205,12 +206,163 @@ GETTING_PORT:
 #endif
 
 #ifdef __linux__
+#include <sys/socket.h>
+#include <arpa/inet.h>
+#include <string.h>
+#include <unistd.h>
 
-void socketLinux()
+bool socketLinux()
 {
+    std::cout << "Input Format: IP Port FileName" << std::endl
+		<< "> ";
 
+	std::string ip;
+	std::cin >> ip;
+
+	// ip 형식 검사
+	{
+		if (ip.size() > 15)
+		{
+			goto INVALID_IP_INPUT;
+		}
+
+		unsigned int numbers[4];
+		char dots[3];
+
+		if (sscanf(ip.c_str(), "%d %c %d %c %d %c %d", numbers, dots, numbers + 1, dots + 1, numbers + 2, dots + 2, numbers + 3) != 7)
+		{
+			goto INVALID_IP_INPUT;
+		}
+
+		int i;
+		for (i = 0; i < 2; ++i)
+		{
+			if (numbers[i] > 255 || dots[i] != '.')
+			{
+				goto INVALID_IP_INPUT;
+			}
+		}
+
+		if (numbers[i] > 255)
+		{
+			goto INVALID_IP_INPUT;
+		}
+
+		goto GETTING_PORT;
+
+	INVALID_IP_INPUT:
+		std::cerr << "IP Format Wrong" << std::endl;
+
+		std::cin.ignore(LLONG_MAX, '\n');
+		std::cin.clear();
+
+		return false;
+	}
+
+GETTING_PORT:
+	unsigned short port;
+	std::cin >> port;
+
+	std::string fileName;
+	std::cin >> fileName;
+
+	std::cin.ignore(LLONG_MAX, '\n');
+	std::cin.clear();
+
+	std::ifstream fin;
+
+	fin.open(fileName, std::ios_base::in);
+	{
+		if (!fin.is_open())
+		{
+			std::cerr << "File Open Failed" << std::endl;
+
+			return false;
+		}
+	}
+	fin.close();
+
+	std::cout << "socket..." << std::endl;
+	int sock = socket(AF_INET, SOCK_STREAM, 0);
+
+	if (sock < 0)
+	{
+		std::cerr << "Invalid Socket: Code - " << errno << std::endl;
+
+		return false;
+	}
+
+	struct sockaddr_in hint;
+	memset(&hint, 0, sizeof(hint));
+
+	hint.sin_family = AF_INET;
+	hint.sin_addr.s_addr = inet_addr(ip.c_str());
+    hint.sin_port = htons(port);
+
+	std::cout << "connect..." << std::endl;
+	int result = connect(sock, reinterpret_cast<sockaddr*>(&hint), sizeof(hint));
+
+	if (result < 0)
+	{
+		std::cerr << "connect Failed: Code - " << errno << std::endl;
+
+		close(sock);
+
+		return false;
+	}
+
+	// 널 문자 자리 확보
+	char buffer[BUFFER_SIZE + 1];
+	std::string line;
+
+	fin.open(fileName, std::ios_base::in);
+	{
+		std::cout << "client ready" << std::endl;
+
+		while (!fin.eof())
+		{
+			std::getline(fin, line);
+
+			const char* sendingStr = line.c_str();
+			size_t sendingLength = line.size() + 1;
+
+			while (sendingLength > BUFFER_SIZE)
+			{
+				result = send(sock, sendingStr, BUFFER_SIZE, 0);
+				if (result >= 0)
+				{
+					memset(buffer, BUFFER_SIZE + 1, sizeof(buffer));
+
+					int bytesReceived = recv(sock, buffer, BUFFER_SIZE, 0);
+					if (bytesReceived > 0)
+					{
+						std::cout << "server> " << buffer << std::endl;
+					}
+				}
+
+				sendingStr += BUFFER_SIZE;
+				sendingLength -= BUFFER_SIZE;
+			}
+
+			result = send(sock, sendingStr, sendingLength, 0);
+			if (result >= 0)
+			{
+				memset(buffer, BUFFER_SIZE + 1, sizeof(buffer));
+
+				int bytesReceived = recv(sock, buffer, BUFFER_SIZE, 0);
+				if (bytesReceived > 0)
+				{
+					std::cout << "server> " << buffer << std::endl;
+				}
+			}
+		}
+	}
+	fin.close();
+
+	close(sock);
+
+    return true;
 }
-
 #endif
 
 int main()
